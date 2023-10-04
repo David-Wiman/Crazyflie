@@ -26,6 +26,8 @@ def rrt_star(snode, gnode, world, options):
         costs - Cost to get to each node in tree.
     '''
     
+    N = options.get('N')
+    
     nodes = np.array([snode])    # Specifies all node positions in network.
     parents = np.array([[None]])  # Specifies edges in network.
     costs = np.array([0])    # Specifies costs to get to node.
@@ -60,7 +62,7 @@ def rrt_star(snode, gnode, world, options):
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
     
             # Checking if new node is the goal node.
-            if distance(new_node, goal_node) < options('terminate_tol'):
+            if distance(new_node, goal_node) < options.get('terminate_tol'):
                 break
             
     # Return tree. 
