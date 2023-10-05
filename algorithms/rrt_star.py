@@ -3,6 +3,11 @@
 # Imports.
 import numpy as np
 
+def distance(node_1, node_2):
+    return np.linalg.norm(node_1 - node_2, 2, 1)
+
+
+
 
 def rrt_star(snode, gnode, world, options):
     '''
@@ -33,9 +38,9 @@ def rrt_star(snode, gnode, world, options):
     costs = np.array([0])    # Specifies costs to get to node.
     
     for i in range(N):
-        random_node = sample()  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
+        random_node = sample(world,gnode,options)  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
         nearest_node, nearest_idx = nearest(nodes, random_node)  # Find nearest node.
-        new_node = steer(nearest_node, random_node) # Steer towards node and create new node. STEP LENGTH?
+        new_node = steer(nearest_node, random_node, options) # Steer towards node and create new node. STEP LENGTH?
         
         if obstacle_free(world, nearest_node, new_node): # options?
             new_idx = len(parents) - 1
@@ -58,7 +63,7 @@ def rrt_star(snode, gnode, world, options):
                 neighbor_node = nodes[neighbor_idx,:]
                 
                 # IF collision free AND cost to get to neighborhood node is less via new node:
-                if obstacle_free(world, nearest_node, new_node) and cost[new_idx] + distance(neighbor_node, new_node) < cost[neighbor_idx]:
+                if obstacle_free(world, nearest_node, new_node) and costs[new_idx] + distance(neighbor_node, new_node) < cost[neighbor_idx]:
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
     
             # Checking if new node is the goal node.
@@ -67,3 +72,65 @@ def rrt_star(snode, gnode, world, options):
             
     # Return tree. 
     return nodes, parents, costs
+
+def sample(world,gnode,options): 
+
+    rg = np.random.default_rng()  # Get the default random number generator
+
+    """Sample a state x in the free state space"""
+    if rg.uniform(0, 1, 1) < options["beta"]:
+        return np.array(gnode)
+    else:
+        found_random = False
+        while not found_random:
+            x = rg.uniform(0, 1, 3) * [
+                world.xmax - world.xmin,
+                world.ymax - world.ymin,
+                world.zmax - world.zmin,
+            ] + [world.xmin, world.ymin, world.zmin]
+            if world.obstacle_free(x[:, None]):
+                found_random = True
+        return x
+
+
+def nearest(nodes, random_node):
+    """Find index of state nearest to x in the matrix nodes"""
+    nearest_idx = np.argmin(np.sum((nodes - x[:, None]) ** 2, axis=0))
+    nearest_node = nodes[nearest_idx]
+
+    return nearest_idx, nearest_node
+
+
+def steer(nearest_node, random_node, options):
+    """Steer from nearest_node towards random_node with step size optkions['lambda']
+
+    If the distance to random_node is less than options['lambda'], return
+    state random_node.
+    """
+    dx = np.linalg.norm(random_node - nearest_node)
+    if dx < options["lambda"]:
+        new_node = random_node
+    else:
+        new_node = nearest_node + options["lambda"] * (random_node - nearest_node) / dx
+    return new_node
+
+
+def obstacle_free(world, nearest_node, new_node):
+    #if 
+
+    #    return 1
+    #else
+        
+    #    return 0
+
+
+def neighborhood():
+
+    return
+
+
+def distance(nearest_node, new_node):
+
+    return
+
+
