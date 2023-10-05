@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 #obstacle_free
 
 class BoxWorld:
-    def __init__(self, lattice):
+    def __init__(self, lattice = [[0, 10], [0, 10], [0, 10]]):
         """Create a BoxWorld object with the given lattice"""
         self.st_sp = state_space_from_lattice(lattice)
         self.xmin = np.min(lattice[0])
