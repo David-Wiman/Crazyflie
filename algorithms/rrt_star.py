@@ -7,6 +7,8 @@ def distance(node_1, node_2):
     return np.linalg.norm(node_1 - node_2, 2, 1)
 
 
+
+
 def rrt_star(snode, gnode, world, options):
     '''
     Main algorithm for motion planning using RRT*. 
@@ -61,7 +63,7 @@ def rrt_star(snode, gnode, world, options):
                 neighbor_node = nodes[neighbor_idx,:]
                 
                 # IF collision free AND cost to get to neighborhood node is less via new node:
-                if obstacle_free(world, nearest_node, new_node) and cost[new_idx] + distance(neighbor_node, new_node) < cost[neighbor_idx]:
+                if obstacle_free(world, nearest_node, new_node) and costs[new_idx] + distance(neighbor_node, new_node) < cost[neighbor_idx]:
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
     
             # Checking if new node is the goal node.
