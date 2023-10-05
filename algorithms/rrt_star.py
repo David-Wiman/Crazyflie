@@ -122,7 +122,7 @@ def obstacle_free(world, nearest_node, new_node):
     #else
         
     #    return 0
-
+    pass
 
 def neighborhood():
 
