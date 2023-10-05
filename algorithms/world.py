@@ -24,8 +24,8 @@ class BoxWorld:
         self.xmax = np.max(lattice[0])
         self.ymin = np.min(lattice[1])
         self.ymax = np.max(lattice[1])
-        self.ymin = np.min(lattice[2])
-        self.ymax = np.max(lattice[2])
+        self.zmin = np.min(lattice[2])
+        self.zmax = np.max(lattice[2])
 
         self._fig = None
         self._boxes = []
