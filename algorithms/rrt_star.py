@@ -62,7 +62,7 @@ def rrt_star(snode, gnode, world, options):
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
     
             # Checking if new node is the goal node.
-            if distance(new_node, goal_node) < options.get('terminate_tol'):
+            if distance(new_node, gnode) < options.get('terminate_tol'):
                 break
             
     # Return tree. 
