@@ -8,41 +8,23 @@ Works best with lighthouse/loco positioning systems.
 """
 import math
 import time
+import numpy as np
 
 # Primarily see __init__.py in cfsim/crazyflie/ to add functionality to simulator
-import cfsim.crtp as crtp
-from cfsim.crazyflie import Crazyflie
-from cfsim.crazyflie.log import LogConfig
-from cfsim.crazyflie.syncCrazyflie import SyncCrazyflie
-from cfsim.crazyflie.syncLogger import SyncLogger
+simulate = True
 
-# import cflib.crtp as crtp
-# from cflib.crazyflie import Crazyflie
-# from cflib.crazyflie.log import LogConfig
-# from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-# from cflib.crazyflie.syncLogger import SyncLogger
-
-logdata = {}
-
-# URI to the Crazyflie to connect to
-uri = 'radio://0/80/2M/E7E7E7E701'
-# uri = 'radio://0/80/2M/E7E7E7E702'
-# uri = 'radio://0/90/2M/E7E7E7E703'
-# uri = 'radio://0/90/2M/E7E7E7E704'
-
-# Change the sequence according to your setup
-#             x    y    z
-sequence = [
-    (0, 0, 0.7),
-    (0.2, 0.2, 0.7),
-    (0.2, -0.2, 0.9),
-    (-0.2, 0.2, 0.5),
-    (-0.2, -0.2, 0.7),
-    (0, 0, 0.7),
-    (0, 0, 0.2),
-]
-# initial = (2.5, 1.4, 0) # UWB
-initial = (0.0, 0, 0.0) # Lighthouse
+if simulate:
+    import cfsim.crtp as crtp
+    from cfsim.crazyflie import Crazyflie
+    from cfsim.crazyflie.log import LogConfig
+    from cfsim.crazyflie.syncCrazyflie import SyncCrazyflie
+    from cfsim.crazyflie.syncLogger import SyncLogger
+else:
+    import cflib.crtp as crtp
+    from cflib.crazyflie import Crazyflie
+    from cflib.crazyflie.log import LogConfig
+    from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+    from cflib.crazyflie.syncLogger import SyncLogger
 
 
 def wait_for_position_estimator(scf):
@@ -137,12 +119,11 @@ def run_sequence(scf, logger, sequence):
         # Compute velocity (P controller)
         vmax = 0.4 # Maximum velocity 
         K = 1 # Controller gain
-        x
         xe = x-x_des
         ye = y-y_des
         ze = z-z_des
         d = math.sqrt(xe**2+ye**2+ze**2)
-        v = K*d;
+        v = K*d
         v = min(vmax,v)
         vx = -v*xe/d
         vy = -v*ye/d
@@ -167,7 +148,28 @@ def run_sequence(scf, logger, sequence):
 
 
 if __name__ == '__main__':
+    logdata = {}
+    crazy_flie_nbr = 1
+
+    # URI to the Crazyflie to connect to
+    uri = f'radio://0/80/2M/E7E7E7E70{crazy_flie_nbr}'
+
     logdata[uri] = {'x':[],'y':[],'z':[]}
+
+    # Change the sequence according to your setup
+    #             x    y    z
+    sequence = np.array([
+        [0, 0, 0.7],
+        [0.2, 0.2, 0.7],
+        [0.2, -0.2, 0.9],
+        [-0.2, 0.2, 0.5],
+        [-0.2, -0.2, 0.7],
+        [0, 0, 0.7],
+        [0, 0, 0.2],
+    ])
+    # initial = (2.5, 1.4, 0) # UWB
+    initial = (0.0, 0, 0.0) # Lighthouse
+
 
     crtp.init_drivers(enable_debug_driver=False)
 
@@ -190,6 +192,6 @@ if __name__ == '__main__':
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    ax.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'])
+    fig.add_subplot(projection='3d')
+    plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'])
     plt.show()

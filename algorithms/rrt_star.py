@@ -3,6 +3,9 @@
 # Imports.
 import numpy as np
 
+def distance(node_1, node_2):
+    return np.linalg.norm(node_1 - node_2, 2, 1)
+
 
 def rrt_star(snode, gnode, world, options):
     '''
