@@ -107,35 +107,27 @@ def run_sequence(scf, logger, sequence):
             print('Setting position {}'.format(position))
 
         # Desired position
-        x_des = position[0] + initial[0]
-        y_des = position[1] + initial[1]
-        z_des = position[2] + initial[2]
+        pos_des = position + initial
 
         # Estimated position
-        x = data['kalman.stateX']
-        y = data['kalman.stateY']
-        z = data['kalman.stateZ']
+        est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
 
         # Compute velocity (P controller)
         vmax = 0.4 # Maximum velocity 
         K = 1 # Controller gain
-        xe = x-x_des
-        ye = y-y_des
-        ze = z-z_des
-        d = math.sqrt(xe**2+ye**2+ze**2)
+        pos_error = est_pos-pos_des
+        d = np.linalg.norm(pos_error)
         v = K*d
         v = min(vmax,v)
-        vx = -v*xe/d
-        vy = -v*ye/d
-        vz = -v*ze/d
+        vel = pos_error/d
 
         # Send velocity
-        cf.commander.send_velocity_world_setpoint(vx, vy, vz, 0)
+        cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
 
         # Log some data
-        logdata[uri]['x'].append(x)
-        logdata[uri]['y'].append(y)
-        logdata[uri]['z'].append(z)
+        logdata[uri]['x'].append(position[0])
+        logdata[uri]['y'].append(position[1])
+        logdata[uri]['z'].append(position[2])
 
     print('Landing')
     for i in range(20):
@@ -146,6 +138,13 @@ def run_sequence(scf, logger, sequence):
     # since the message queue is not flushed before closing
     time.sleep(0.1)
 
+def plot_path(logdata):
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    fig.add_subplot(projection='3d')
+    plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'])
+    plt.show()
 
 if __name__ == '__main__':
     logdata = {}
@@ -168,7 +167,7 @@ if __name__ == '__main__':
         [0, 0, 0.2],
     ])
     # initial = (2.5, 1.4, 0) # UWB
-    initial = (0.0, 0, 0.0) # Lighthouse
+    initial = np.array([0.0, 0, 0.0]) # Lighthouse
 
 
     crtp.init_drivers(enable_debug_driver=False)
@@ -183,15 +182,7 @@ if __name__ == '__main__':
         set_initial_position(scf)
         reset_estimator(scf)
 
-
         with SyncLogger(scf, log_config) as logger:
             run_sequence(scf, logger, sequence)
 
-
-    # Plot
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    fig.add_subplot(projection='3d')
-    plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'])
-    plt.show()
+    plot_path(logdata)
