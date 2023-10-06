@@ -6,11 +6,14 @@ flies towards specified positions in sequence using onboard velocity control.
 Using synchronous crazyflie classes suitable to control a single drone.
 Works best with lighthouse/loco positioning systems.
 """
-import math
 import time
 import numpy as np
 
 # Primarily see __init__.py in cfsim/crazyflie/ to add functionality to simulator
+from algorithms.PID_controller import PID_controller
+import numpy as np
+
+
 simulate = True
 
 if simulate:
@@ -112,16 +115,8 @@ def run_sequence(scf, logger, sequence):
         # Estimated position
         est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
 
-        # Compute velocity (P controller)
-        vmax = 0.4 # Maximum velocity 
-        K = 1 # Controller gain
-        pos_error = est_pos-pos_des
-        d = np.linalg.norm(pos_error)
-        v = K*d
-        v = min(vmax,v)
-        vel = pos_error/d
+        vel = controller.compute_control(est_pos, pos_des)
 
-        # Send velocity
         cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
 
         # Log some data
@@ -146,9 +141,11 @@ def plot_path(logdata):
     plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'])
     plt.show()
 
+
 if __name__ == '__main__':
     logdata = {}
     crazy_flie_nbr = 1
+    controller = PID_controller(Kp=1, Ki=1, Kd=1)
 
     # URI to the Crazyflie to connect to
     uri = f'radio://0/80/2M/E7E7E7E70{crazy_flie_nbr}'

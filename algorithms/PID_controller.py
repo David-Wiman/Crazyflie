@@ -1,3 +1,5 @@
+import numpy as np
+
 class PID_controller:
     def __init__(self, Kp, Ki, Kd):
         self.Kp = Kp
@@ -7,21 +9,17 @@ class PID_controller:
         self.integral = 0
         self.prev_error = 0
     
-    def set_param(self, Kp, Ki, Kd)
+    def set_param(self, Kp, Ki, Kd):
         self.Kp = Kp
         self.Ki = Ki
         self.Kd = Kd
 
     # Compute velocity (PID controller)
-    def compute_control(self, x, y, z, x_des, y_des, z_des)
+    def compute_control(self, est_pos, pos_des):
         # Errors
-        xe = x-x_des
-        ye = y-y_des
-        ze = z-z_des
-
+        pos_error = est_pos-pos_des
         # Euclidean distance to path
-        d = math.sqrt(xe**2+ye**2+ze**2)
-
+        d = np.linalg.norm(pos_error)
         # Accumulated error
         self.integral += d
 
@@ -32,11 +30,7 @@ class PID_controller:
         self.prev_error = d
 
         # Cap off
-        v = min(self.vmax, v)
+        v = min(self.vmax,v)
+        vel = v*pos_error/d
 
-        # Normalize
-        vx = -v*xe/d
-        vy = -v*ye/d
-        vz = -v*ze/d
-
-        return vx, vy, 
+        return vel
