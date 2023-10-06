@@ -2,6 +2,7 @@
 
 # Imports.
 import numpy as np
+import world
 
 def distance(node_1, node_2):
     return np.linalg.norm(node_1 - node_2, 2, 1)
@@ -23,6 +24,7 @@ def rrt_star(snode, gnode, world, options):
                 {
                 'N': <Maximum number of iterations>, 
                 'terminate_tol': <Allowed distance to goal node for termination of tree creation>,
+                'npoints': <Number of discritization points for checking collisions>,
                 }
         
     Output arguments:
@@ -32,6 +34,7 @@ def rrt_star(snode, gnode, world, options):
     '''
     
     N = options.get('N')
+    npoints = options.get('npoints')
     
     nodes = np.array([snode])    # Specifies all node positions in network.
     parents = np.array([[None]])  # Specifies edges in network.
@@ -42,7 +45,7 @@ def rrt_star(snode, gnode, world, options):
         nearest_node, nearest_idx = nearest(nodes, random_node)  # Find nearest node.
         new_node = steer(nearest_node, random_node, options) # Steer towards node and create new node. STEP LENGTH?
         
-        if obstacle_free(world, nearest_node, new_node): # options?
+        if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)): # options?
             new_idx = len(parents) - 1
             neighbor_idxs = neighborhood() # Find neighborhood to new node. RADIUS OF NEIGHBORHOOD?
             min_cost = distance(nearest_node, new_node) + costs[nearest_idx] # Calculate cost to get to new node from nearest. 
@@ -52,7 +55,7 @@ def rrt_star(snode, gnode, world, options):
             for neighbor_idx in neighbor_idxs:  
                 neighbor_node = nodes[neighbor_idx,:]
                 
-                if obstacle_free(neighbor_node, new_node) and ( costs[neighbor_idx] + distance(neighbor_node, new_node) < min_cost ): # IF obstacle free AND cost to get to new node is less than before. 
+                if world.obstacle_free(discrete_line(neighbor_node, new_node, npoints)) and ( costs[neighbor_idx] + distance(neighbor_node, new_node) < min_cost ): # IF obstacle free AND cost to get to new node is less than before. 
                     min_cost = costs[neighbor_idx] + distance(neighbor_node, new_node) # Update nearest and cost.
                     min_idx = neighbor_idx
     
@@ -63,7 +66,7 @@ def rrt_star(snode, gnode, world, options):
                 neighbor_node = nodes[neighbor_idx,:]
                 
                 # IF collision free AND cost to get to neighborhood node is less via new node:
-                if obstacle_free(world, nearest_node, new_node) and costs[new_idx] + distance(neighbor_node, new_node) < cost[neighbor_idx]:
+                if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)) and costs[new_idx] + distance(neighbor_node, new_node) < costs[neighbor_idx]:
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
     
             # Checking if new node is the goal node.
@@ -73,11 +76,12 @@ def rrt_star(snode, gnode, world, options):
     # Return tree. 
     return nodes, parents, costs
 
-def sample(world,gnode,options): 
 
-    rg = np.random.default_rng()  # Get the default random number generator
-
+def sample(world, gnode, options): 
     """Sample a state x in the free state space"""
+    
+    rg = np.random.default_rng()  # Get the default random number generator
+    
     if rg.uniform(0, 1, 1) < options["beta"]:
         return np.array(gnode)
     else:
@@ -95,10 +99,10 @@ def sample(world,gnode,options):
 
 def nearest(nodes, random_node):
     """Find index of state nearest to x in the matrix nodes"""
-    nearest_idx = np.argmin(np.sum((nodes - x[:, None]) ** 2, axis=0))
+    nearest_idx = np.argmin(np.sum((nodes - random_node[:, None]) ** 2, axis=0))
     nearest_node = nodes[nearest_idx]
-
-    return nearest_idx, nearest_node
+    
+    return nearest_node, nearest_idx
 
 
 def steer(nearest_node, random_node, options):
@@ -115,14 +119,10 @@ def steer(nearest_node, random_node, options):
     return new_node
 
 
-def obstacle_free(world, nearest_node, new_node):
-    #if 
+def discrete_line(node1, node2, npoints = 50):
+    '''Creates a discrete line between two nodes with specified resolution.'''
+    return np.linspace(node1, node2, npoints)
 
-    #    return 1
-    #else
-        
-    #    return 0
-    pass
 
 def neighborhood():
 
@@ -130,7 +130,7 @@ def neighborhood():
 
 
 def distance(nearest_node, new_node):
-
-    return
+    '''Computing distance between two nodes.'''
+    return np.linalg.norm(nearest_node - new_node)
 
 
