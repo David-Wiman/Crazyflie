@@ -49,8 +49,6 @@ class MPC_controller:
         # Solve optimatization problem
         problem.solve()
 
-        print(f'Cost value: {problem.value}')
-
         # Extraxt the first u
         if problem.status == "optimal":
             u = self.U.value[:, 0] # extracts first cloumn

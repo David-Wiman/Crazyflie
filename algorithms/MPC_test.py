@@ -1,4 +1,7 @@
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+
 import cvxpy as cp
 from MPC_controller import MPC_controller
 
@@ -18,10 +21,29 @@ N = 10
 
 x0 = np.array([1.5, -0.5, 0.5])
 
-controller = MPC_controller(A, B, Q, R, N, x0)
-
 # Define the reference trajectory
 reference_trajectory = np.array([
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
+    [1.5, -0.5, 0.5],
     [0.0, 0.0, 0.0],
     [0.0, 0.0, 0.0],
     [0.0, 0.0, 0.0],
@@ -33,17 +55,44 @@ reference_trajectory = np.array([
     [0.0, 0.0, 0.0],
     [0.0, 0.0, 0.0],
     [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0]
 ])
 
-print("Start state: ", controller.x0)
+if __name__ == '__main__':
+    controller = MPC_controller(A, B, Q, R, N, x0)
 
-for _ in range(40):
-    u = controller.compute_control(reference_trajectory)
-    
-    print("state: ")
-    print(controller.x0)
-    print("control: ")
-    print(u)
-    
+    print("Start state: ", controller.x0)
 
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
 
+    for k in range(len(reference_trajectory) - 10):
+        u = controller.compute_control(reference_trajectory[k : k + 10])
+
+        #print("Error to ", reference_trajectory[k])
+        #print(controller.x0 - reference_trajectory[k])
+
+        ax.plot3D([controller.x0[0]], [controller.x0[1]], [controller.x0[2]], 'o')
+        ax.plot3D([reference_trajectory[k][0]], [reference_trajectory[k][1]], [reference_trajectory[k][2]], 'x')
+        
+    plt.show()
