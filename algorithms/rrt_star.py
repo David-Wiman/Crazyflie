@@ -3,12 +3,7 @@
 # Imports.
 import numpy as np
 import world
-
-def distance(node_1, node_2):
-    return np.linalg.norm(node_1 - node_2, 2, 1)
-
-
-
+import matplotlib as plt
 
 def rrt_star(snode, gnode, world, options):
     '''
@@ -25,6 +20,7 @@ def rrt_star(snode, gnode, world, options):
                 'N': <Maximum number of iterations>, 
                 'terminate_tol': <Allowed distance to goal node for termination of tree creation>,
                 'npoints': <Number of discritization points for checking collisions>,
+                'beta': <probability of sampling goal node>,
                 }
         
     Output arguments:
@@ -53,7 +49,7 @@ def rrt_star(snode, gnode, world, options):
             
             # For all nodes in neighborhood (connect new to cheapest path).
             for neighbor_idx in neighbor_idxs:  
-                neighbor_node = nodes[neighbor_idx,:]
+                neighbor_node = nodes[:,neighbor_idx]
                 
                 if world.obstacle_free(discrete_line(neighbor_node, new_node, npoints)) and ( costs[neighbor_idx] + distance(neighbor_node, new_node) < min_cost ): # IF obstacle free AND cost to get to new node is less than before. 
                     min_cost = costs[neighbor_idx] + distance(neighbor_node, new_node) # Update nearest and cost.
@@ -72,7 +68,7 @@ def rrt_star(snode, gnode, world, options):
             # Checking if new node is the goal node.
             if distance(new_node, gnode) < options.get('terminate_tol'):
                 break
-            
+    
     # Return tree. 
     return nodes, parents, costs
 
@@ -124,13 +120,61 @@ def discrete_line(node1, node2, npoints = 50):
     return np.linspace(node1, node2, npoints)
 
 
-def neighborhood():
+def neighborhood(nodes, center, radius):
+    """Find the indices of the states in nodes within a neighborhood with
+        radius r from node center."""
+    idxs = np.where(np.sum((nodes - center[:, None]) ** 2, axis=0) < radius**2)
+    return idxs[0]
 
-    return
+
+# def distance(nearest_node, new_node):
+#     '''Computing distance between two nodes.'''
+#     return np.linalg.norm(nearest_node - new_node)
 
 
-def distance(nearest_node, new_node):
-    '''Computing distance between two nodes.'''
-    return np.linalg.norm(nearest_node - new_node)
+def distance(node_1, node_2):
+    return np.linalg.norm(node_1 - node_2, 2, 1)
+
+
+def backtrack(parents, nodes):
+    '''Backtracks the path from goal node to start node.'''
+    idx = parents[-1]
+    n_path_nodes = 0
+    length = 0
+
+    while idx != 0:
+        n_path_nodes +=1
+        idx = parents[idx]
+        length += np.linalg.norm(nodes[:, parents[idx]] - nodes[:, idx])
+    return n_path_nodes, length
+
+
+def plot_path(world, nodes, parents): # Needs modifications from 3D.
+    '''Plots the tree and the planned path.'''
+    plt.figure()
+    world.draw()
+    
+    # Plot tree
+    drawlines = []
+    for node in parents:
+        if node != 0:
+            ll = np.column_stack((nodes[:, parents[node]], nodes[:, node]))
+            drawlines.append(ll[0])
+            drawlines.append(ll[1])
+            #drawlines.append(ll[2])
+    plt.plot(*drawlines, color='k', lw=1)
+    drawlines = []
+    idx = -1 # idx_goal before.
+    
+    # Plot path.
+    while idx != 0:
+        ll = np.column_stack((nodes[:, parents[idx]], nodes[:, idx]))
+        drawlines.append(ll[0])
+        drawlines.append(ll[1])
+        #drawlines.append(ll[2])
+        idx = parents[idx]
+    plt.plot(*drawlines, color='b', lw=2)
+
+
 
 
