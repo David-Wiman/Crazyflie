@@ -34,7 +34,7 @@ def rrt_star(snode, gnode, world, options):
     npoints = options.get('npoints')
     
     nodes = np.array(snode)    # Specifies all node positions in network.
-    parents = np.array([None])  # Specifies edges in network.
+    parents = np.array([0])  # Specifies edges in network.
     costs = np.array([0])    # Specifies costs to get to node.
     
     for i in range(N):
@@ -152,29 +152,36 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     '''Plots the tree and the planned path.'''
     
     fig = plt.figure()
-    #world.draw()
+    #world.draw() TODO world plot needs fixing.
     ax = plt.axes(projection='3d')
+    ax.set_xlim([-1, 11])
+    ax.set_ylim([-1, 11])
+    ax.set_zlim([-1, 11])
     
     # Plot tree
     drawlines = []
-    # for node in parents:
-    #     if node != 0:
-    #         ll = np.column_stack((nodes[:, parents[node]], nodes[:, node]))
-    #         drawlines.append(ll[0])
-    #         drawlines.append(ll[1])
-    #         drawlines.append(ll[2])
-    # #plt.plot(*drawlines, color='k', lw=1)
-    # ax.plot3D(*drawlines, color='k', lw = 1)
+    for node in parents:
+        if node != 0:
+            drawlines = []
+            ll = np.column_stack((nodes[:, parents[node]], nodes[:, node]))
+            drawlines.append(ll[0])
+            drawlines.append(ll[1])
+            drawlines.append(ll[2])
+            ax.plot3D(*drawlines, color='r', lw = 1)
+    #plt.plot(*drawlines, color='k', lw=1)
+    #
      
     drawlines = []
     idx = -1 # idx_goal before.
     # Plot path.
     while idx != 0:
+        drawlines = []
         ll = np.column_stack((nodes[:, parents[idx]], nodes[:, idx]))
         drawlines.append(ll[0])
         drawlines.append(ll[1])
         drawlines.append(ll[2])
         idx = parents[idx]
+        ax.plot3D(*drawlines, color='b', lw = 2)
     #plt.plot(*drawlines, color='b', lw=2)
-    ax.plot3D(*drawlines, color='b', lw = 2)
+    #ax.plot3D(*drawlines, color='b', lw = 2)
     plt.show()
