@@ -41,7 +41,6 @@ def rrt_star(snode, gnode, world, options):
         random_node = sample(world,gnode,options)  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
         nearest_node, nearest_idx = nearest(nodes, random_node)  # Find nearest node.
         new_node = steer(nearest_node, random_node, options) # Steer towards node and create new node. STEP LENGTH?
-        #print(f'New node {random_node} with shape {random_node.shape}')
         
         if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)):
             new_idx = len(parents) - 1
@@ -57,12 +56,13 @@ def rrt_star(snode, gnode, world, options):
                     min_cost = costs[neighbor_idx] + distance(neighbor_node, new_node) # Update nearest and cost.
                     min_idx = neighbor_idx
                     
+            nodes = np.hstack([nodes, new_node]) # Newly added: Nodes are not appending properly.
             parents = np.append(parents, min_idx) #parents.append(min_idx) # Add edge to tree
             costs = np.append(costs, min_cost) # Newly added: Add cost to min.
             
             # For all nodes in neighborhood (rewire tree in neighborhood).
             for neighbor_idx in neighbor_idxs:
-                neighbor_node = nodes[neighbor_idx,:]
+                neighbor_node = nodes[:,neighbor_idx]
                 
                 # IF collision free AND cost to get to neighborhood node is less via new node:
                 if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)) and costs[new_idx] + distance(neighbor_node, new_node) < costs[neighbor_idx]:
@@ -98,8 +98,9 @@ def sample(world, gnode, options):
 
 def nearest(nodes, random_node):
     """Find index of state nearest to x in the matrix nodes"""
-    nearest_idx = np.argmin(np.sum((nodes - random_node[:, None]) ** 2, axis=0))
-    nearest_node = nodes[nearest_idx]
+    #nearest_idx = np.argmin(np.sum((nodes - random_node[:, None]) ** 2, axis=0)) 
+    nearest_idx = np.argmin(np.sum((nodes - random_node) ** 2, axis=0)) # TODO test this.
+    nearest_node = nodes[:,nearest_idx].reshape(3, 1)
     return nearest_node, nearest_idx
 
 
@@ -126,7 +127,7 @@ def neighborhood(nodes, center, radius):
     """Find the indices of the states in nodes within a neighborhood with
         radius r from node center."""
     idxs = np.where(np.sum((nodes - center) ** 2, axis=0) < radius**2)
-    return idxs[0]
+    return idxs[0] # NOTE double index?
 
 
 def distance(node1, node2):
@@ -169,14 +170,11 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     idx = -1 # idx_goal before.
     # Plot path.
     while idx != 0:
-        print('Next')
         ll = np.column_stack((nodes[:, parents[idx]], nodes[:, idx]))
-        print(f'll {ll}')
         drawlines.append(ll[0])
         drawlines.append(ll[1])
         drawlines.append(ll[2])
         idx = parents[idx]
-        print(f'Drawlines {drawlines}')
     #plt.plot(*drawlines, color='b', lw=2)
     ax.plot3D(*drawlines, color='b', lw = 2)
     plt.show()
