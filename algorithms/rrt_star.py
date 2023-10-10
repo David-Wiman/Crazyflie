@@ -2,7 +2,7 @@
 
 # Imports.
 import numpy as np
-from algorithms.world import BoxWorld
+from world import BoxWorld
 import matplotlib.pyplot as plt
 
 def rrt_star(snode, gnode, world, options):
@@ -51,7 +51,7 @@ def rrt_star(snode, gnode, world, options):
             
             # For all nodes in neighborhood (connect new to cheapest path).
             for neighbor_idx in neighbor_idxs:  
-                neighbor_node = nodes[:,neighbor_idx]
+                neighbor_node = nodes[:,neighbor_idx].reshape(3,1)
                 
                 if world.obstacle_free(discrete_line(neighbor_node, new_node, npoints)) and ( costs[neighbor_idx] + distance(neighbor_node, new_node) < min_cost ): # IF obstacle free AND cost to get to new node is less than before. 
                     min_cost = costs[neighbor_idx] + distance(neighbor_node, new_node) # Update nearest and cost.
@@ -160,8 +160,7 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     ax.set_ylim([world.ymin, world.ymax])
     ax.set_zlim([world.zmin, world.zmax])
     world.draw() # TODO world plot needs fixing.
-    plt.show()
-    return
+    
     # Plot tree
     drawlines = []
     for node in parents:

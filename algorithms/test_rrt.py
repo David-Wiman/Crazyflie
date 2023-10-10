@@ -17,7 +17,7 @@ options = {
         'npoints': 50,
         'beta': 0.05,
         'lambda': 0.01,
-        'r': np.sqrt(0.4),
+        'r': np.sqrt(0.05),
 }
 
 # Run RRT*
