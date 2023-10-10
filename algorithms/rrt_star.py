@@ -2,7 +2,7 @@
 
 # Imports.
 import numpy as np
-# import world
+from algorithms.world import BoxWorld
 import matplotlib.pyplot as plt
 
 def rrt_star(snode, gnode, world, options):
@@ -77,7 +77,7 @@ def rrt_star(snode, gnode, world, options):
     path = backtrack(parents, nodes)
     
     # Return tree. 
-    return path, nodes.T, parents, costs
+    return path.T, nodes.T, parents, costs
 
 
 def sample(world, gnode, options): 

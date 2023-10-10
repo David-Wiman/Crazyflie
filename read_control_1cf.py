@@ -8,13 +8,14 @@ Works best with lighthouse/loco positioning systems.
 """
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Primarily see __init__.py in cfsim/crazyflie/ to add functionality to simulator
 from algorithms.PID_controller import PID_controller
 from algorithms.world import BoxWorld
 from algorithms.rrt_star import rrt_star
-import numpy as np
-
+from algorithms.MPC_controller import MPC_controller
+from mpl_toolkits.mplot3d import Axes3D
 
 simulate = True
 
@@ -70,9 +71,9 @@ def wait_for_position_estimator(scf):
 
 
 def set_initial_position(scf):
-    scf.cf.param.set_value('kalman.initialX', initial[0])
-    scf.cf.param.set_value('kalman.initialY', initial[1])
-    scf.cf.param.set_value('kalman.initialZ', initial[2])
+    scf.cf.param.set_value('kalman.initialX', start_node[0])
+    scf.cf.param.set_value('kalman.initialY', start_node[1])
+    scf.cf.param.set_value('kalman.initialZ', start_node[2])
 
 def reset_estimator(scf):
     cf = scf.cf
@@ -102,7 +103,7 @@ def run_sequence(scf, logger, sequence):
 
         # Determine position reference based on time
         relativeTime = time.time()-startTime
-        if relativeTime > (sequencePos+1)*5: # Fly to each point for 5 seconds
+        if relativeTime > (sequencePos+1)*0.1: # Fly to each point for 5 seconds
             sequencePos += 1
 
             if sequencePos >= len(sequence):
@@ -111,13 +112,11 @@ def run_sequence(scf, logger, sequence):
             position = sequence[sequencePos]
             print('Setting position {}'.format(position))
 
-        # Desired position
-        pos_des = position + initial
+        reference_trajectory = np.repeat(position[np.newaxis,...], 20, axis=0)
 
-        # Estimated position
-        est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
+        vel = controller.compute_control(reference_trajectory)
 
-        vel = controller.compute_control(est_pos, pos_des)
+        x0_list.append(controller.x0)
 
         cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
 
@@ -140,14 +139,12 @@ def plot_path(logdata):
     import matplotlib.pyplot as plt
     fig = plt.figure()
     fig.add_subplot(projection='3d')
-    plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'])
-    plt.show()
+    plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'], 'b')
 
 
 if __name__ == '__main__':
     logdata = {}
     crazy_flie_nbr = 1
-    controller = PID_controller(Kp=1, Ki=1, Kd=1)
 
     world = BoxWorld()
     start_node = np.array([0,0,0])
@@ -168,22 +165,38 @@ if __name__ == '__main__':
 
     logdata[uri] = {'x':[],'y':[],'z':[]}
 
-    path, sequence, parents, costs = rrt_star(start_node, goal_node, world, options)
-    
-    # Change the sequence according to your setup
-    #             x    y    z
-    nodes = np.array([
-        [0, 0, 0.7],
-        [0.2, 0.2, 0.7],
-        [0.2, -0.2, 0.9],
-        [-0.2, 0.2, 0.5],
-        [-0.2, -0.2, 0.7],
-        [0, 0, 0.7],
-        [0, 0, 0.2],
-    ])
-    # initial = (2.5, 1.4, 0) # UWB
-    initial = start_node # Lighthouse
+    world = BoxWorld()
 
+    start_node = np.array([0, 0, 0])
+    goal_node = np.array([10, 10, 5])
+    options = {
+        'N': 10000,
+        'terminate_tol': 0.1,
+        'npoints': 50,
+        'beta': 0.05,
+        'lambda': 0.3,
+        'r': np.sqrt(0.4),
+    }
+
+    path, sequence, parents, costs = rrt_star(start_node, goal_node, world, options)
+
+    A = np.array([[0.01, 0, 0],
+                  [0, 0.01, 0],
+                  [0, 0, 0.01]])
+
+    B = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1]])
+
+    # Define the cost function (quadratic cost with reference tracking)
+    Q = np.diag([100.0, 10.0, 2])  # State cost matrix
+    R = np.diag([0.1, 0.1, 0.1])     # Control cost matrix
+
+    N = 10
+
+    controller = MPC_controller(A, B, Q, R, N, x0=np.array([0, 0, 0]))
+
+    x0_list = []
 
     crtp.init_drivers(enable_debug_driver=False)
 
@@ -198,6 +211,9 @@ if __name__ == '__main__':
         reset_estimator(scf)
 
         with SyncLogger(scf, log_config) as logger:
-            run_sequence(scf, logger, sequence)
+            run_sequence(scf, logger, path)
 
     plot_path(logdata)
+    plt.plot(*path.T, '--r')
+    plt.legend(["Real Position", "Planned Path"])
+    plt.show()
