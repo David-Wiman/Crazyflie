@@ -2,7 +2,7 @@
 
 # Imports.
 import numpy as np
-import world
+# import world
 import matplotlib.pyplot as plt
 
 def rrt_star(snode, gnode, world, options):
@@ -33,9 +33,10 @@ def rrt_star(snode, gnode, world, options):
     N = options.get('N')
     npoints = options.get('npoints')
     
-    nodes = np.array(snode)    # Specifies all node positions in network.
+    nodes = snode.reshape(3,1)    # Specifies all node positions in network.
     parents = np.array([0])  # Specifies edges in network.
     costs = np.array([0])    # Specifies costs to get to node.
+    gnode = gnode.reshape(3,1)
     
     for i in range(N):
         random_node = sample(world,gnode,options)  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
@@ -76,7 +77,7 @@ def rrt_star(snode, gnode, world, options):
     path = backtrack(parents, nodes)
     
     # Return tree. 
-    return path, nodes, parents, costs
+    return path, nodes.T, parents, costs
 
 
 def sample(world, gnode, options): 
@@ -165,7 +166,7 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     for node in parents:
         if node != 0:
             drawlines = []
-            ll = np.column_stack((nodes[:, parents[node]], nodes[:, node]))
+            ll = np.column_stack((nodes[parents[node]], nodes[node]))
             drawlines.append(ll[0])
             drawlines.append(ll[1])
             drawlines.append(ll[2])
@@ -178,7 +179,7 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     # Plot path.
     while idx != 0:
         drawlines = []
-        ll = np.column_stack((nodes[:, parents[idx]], nodes[:, idx]))
+        ll = np.column_stack((nodes[parents[idx]], nodes[idx]))
         drawlines.append(ll[0])
         drawlines.append(ll[1])
         drawlines.append(ll[2])

@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 # Create world.
 world = BoxWorld([[0, 10], [0, 10], [0, 10]])
-snode = np.array([3, 3, 3]).reshape(3, 1)
-gnode = np.array([10, 5, 2]).reshape(3, 1)
+snode = np.array([3, 3, 3])
+gnode = np.array([10, 5, 2])
 options = {
         'N': 10000,
         'terminate_tol': 0.1,

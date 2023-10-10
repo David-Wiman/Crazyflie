@@ -11,6 +11,8 @@ import numpy as np
 
 # Primarily see __init__.py in cfsim/crazyflie/ to add functionality to simulator
 from algorithms.PID_controller import PID_controller
+from algorithms.world import BoxWorld
+from algorithms.rrt_star import rrt_star
 import numpy as np
 
 
@@ -147,14 +149,30 @@ if __name__ == '__main__':
     crazy_flie_nbr = 1
     controller = PID_controller(Kp=1, Ki=1, Kd=1)
 
+    world = BoxWorld()
+    start_node = np.array([0,0,0])
+
+    start_node = np.array([0, 0, 0])
+    goal_node = np.array([10, 5, 2])
+    options = {
+            'N': 10000,
+            'terminate_tol': 0.1,
+            'npoints': 50,
+            'beta': 0.05,
+            'lambda': 0.3,
+            'r': np.sqrt(0.4),
+    }
+
     # URI to the Crazyflie to connect to
     uri = f'radio://0/80/2M/E7E7E7E70{crazy_flie_nbr}'
 
     logdata[uri] = {'x':[],'y':[],'z':[]}
 
+    path, sequence, parents, costs = rrt_star(start_node, goal_node, world, options)
+    
     # Change the sequence according to your setup
     #             x    y    z
-    sequence = np.array([
+    nodes = np.array([
         [0, 0, 0.7],
         [0.2, 0.2, 0.7],
         [0.2, -0.2, 0.9],
@@ -164,7 +182,7 @@ if __name__ == '__main__':
         [0, 0, 0.2],
     ])
     # initial = (2.5, 1.4, 0) # UWB
-    initial = np.array([0.0, 0, 0.0]) # Lighthouse
+    initial = start_node # Lighthouse
 
 
     crtp.init_drivers(enable_debug_driver=False)
