@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 # Create world.
 world = BoxWorld([[0, 10], [0, 10], [0, 10]])
-snode = np.array([3, 3, 3]).reshape(3,1)
-gnode = np.array([10, 5, 2]).reshape(3,1)
+snode = np.array([3, 3, 3]).reshape(3, 1)
+gnode = np.array([10, 5, 2]).reshape(3, 1)
 options = {
         'N': 10000,
         'terminate_tol': 0.1,
@@ -20,7 +20,9 @@ options = {
 }
 
 # Run RRT*
-nodes, parents, costs = rrt_star.rrt_star(snode, gnode, world, options)
+path, nodes, parents, costs = rrt_star.rrt_star(snode, gnode, world, options)
+
+print(f'Path {path} and shape {path.shape}')
 
 # Evaluate and plot.
 rrt_star.plot_path(world, nodes, parents) # TODO Plot is not working!!!

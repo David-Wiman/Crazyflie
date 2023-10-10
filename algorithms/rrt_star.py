@@ -72,8 +72,11 @@ def rrt_star(snode, gnode, world, options):
             if distance(new_node, gnode) < options.get('terminate_tol'):
                 break
     
+    # Backtrack to get nodes for optimal path.
+    path = backtrack(parents, nodes)
+    
     # Return tree. 
-    return nodes, parents, costs
+    return path, nodes, parents, costs
 
 
 def sample(world, gnode, options): 
@@ -138,14 +141,13 @@ def distance(node1, node2):
 def backtrack(parents, nodes):
     '''Backtracks the path from goal node to start node.'''
     idx = parents[-1]
-    n_path_nodes = 0
-    length = 0
-
+    path = np.array(nodes[:, idx].reshape(3, 1))
+    idx = parents[idx]
     while idx != 0:
-        n_path_nodes +=1
+        path = np.hstack([path, nodes[:, idx].reshape(3, 1)])
         idx = parents[idx]
-        length += np.linalg.norm(nodes[:, parents[idx]] - nodes[:, idx])
-    return n_path_nodes, length
+    path = np.fliplr(path)  # Change order to get start node at first index.
+    return path
 
 
 def plot_path(world, nodes, parents): # Needs modifications for 3D.
