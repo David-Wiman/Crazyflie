@@ -6,7 +6,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 #num_nodes
 #add_box
 #draw_box
@@ -58,13 +57,23 @@ class BoxWorld:
         x0, y0, z0, W1, W2, W3, fill_box = b
 
         if fill_box:
-            ax.fill([x0, x0 + W1, x0 + W1, x0, x0],
-                    [y0, y0, y0 + W2, y0 + W2, y0],
-                    [z0, z0, z0, z0 + W3, z0 + W3], *args, **kwargs)
+            print('EHj')
+            ax.plot_surface(np.array([x0, x0, x0+W1, x0+W1]), 
+                            np.array([y0, y0+W2, y0, y0+W2]),
+                            np.zeros(4))
+            ax.plot_surface(np.array([-2, -2, -2, -2]), 
+                            np.array([y0, y0, y0+W2, y0+W2]),
+                            np.array([z0, z0+W3, z0, z0+W3]))
+                        #np.array([x0, x0, x0, x0, x0+W1, x0+W1, x0+W1, x0+W1]),
+                        #np.array([y0, y0, y0+W2, y0+W2, y0, y0, y0+W2, y0+W2]),
+                        #np.append(np.zeros((4)), np.ones(4)))
+                        #np.array([z0, z0+W3, z0, z0+W3, z0, z0+W3, z0, z0+W3]))
         else:
-            ax.plot([x0, x0 + W1, x0 + W1, x0, x0],
-                    [y0, y0, y0 + W2, y0 + W2, y0],
-                    [z0, z0, z0, z0 + W3, z0 + W3], *args, **kwargs)
+            print('då')
+            pass
+            ax.plot3D([x0, x0, x0, x0, x0+W1, x0+W1, x0+W1, x0+W1],
+                    [y0, y0, y0+W2, y0+W2, y0, y0, y0+W2, y0+W2],
+                    [z0, z0+W3, z0, z0+W3, z0, z0+W3, z0, z0+W3])
 
     def register_figure(self, fig):
         self._fig = fig
@@ -139,3 +148,11 @@ def obstacle_check(x, y, z, x_obst, y_obst, z_obst):
            (z > z_obst[ii, 0] and z < z_obst[ii, 1]):
             return True
     return False
+
+
+def create_mission(world, mission_number = 1):
+    if mission_number == 1:
+        world.add_box(-2, -1, 0, 0.5, 0.5, 0.5)
+    else: 
+        pass
+    return world

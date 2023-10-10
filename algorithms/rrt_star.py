@@ -86,7 +86,7 @@ def sample(world, gnode, options):
     rg = np.random.default_rng()  # Get the default random number generator
     
     if rg.uniform(0, 1, 1) < options["beta"]:
-        return np.array(gnode)
+        return np.array(gnode).reshape(3,1)
     else:
         found_random = False
         while not found_random:
@@ -124,7 +124,7 @@ def steer(nearest_node, random_node, options):
 
 def discrete_line(node1, node2, npoints = 50):
     '''Creates a discrete line between two nodes with specified resolution.'''
-    return np.linspace(node1, node2, npoints)
+    return np.linspace(node1, node2, npoints, axis = 1).squeeze()
 
 
 def neighborhood(nodes, center, radius):
@@ -155,12 +155,13 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     '''Plots the tree and the planned path.'''
     
     fig = plt.figure()
-    #world.draw() TODO world plot needs fixing.
     ax = plt.axes(projection='3d')
-    ax.set_xlim([-1, 11])
-    ax.set_ylim([-1, 11])
-    ax.set_zlim([-1, 11])
-    
+    ax.set_xlim([world.xmin, world.xmax])
+    ax.set_ylim([world.ymin, world.ymax])
+    ax.set_zlim([world.zmin, world.zmax])
+    world.draw() # TODO world plot needs fixing.
+    plt.show()
+    return
     # Plot tree
     drawlines = []
     for node in parents:
