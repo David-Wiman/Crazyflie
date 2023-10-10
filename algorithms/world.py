@@ -57,6 +57,13 @@ class BoxWorld:
         x0, y0, z0, W1, W2, W3, fill_box = b
 
         if fill_box:
+            ax.bar3d(x0, y0, z0, W1, W2, W3, shade=True, color='red', alpha=0.7)
+        else:
+            # Draw the outline of the box
+            ax.plot([x0, x0 + W1, x0 + W1, x0, x0],
+                    [y0, y0, y0 + W2, y0 + W2, y0], *args, **kwargs)
+        '''
+        if fill_box:
             print('EHj')
             ax.plot_surface(np.array([x0, x0, x0+W1, x0+W1]), 
                             np.array([y0, y0+W2, y0, y0+W2]),
@@ -74,7 +81,8 @@ class BoxWorld:
             ax.plot3D([x0, x0, x0, x0, x0+W1, x0+W1, x0+W1, x0+W1],
                     [y0, y0, y0+W2, y0+W2, y0, y0, y0+W2, y0+W2],
                     [z0, z0+W3, z0, z0+W3, z0, z0+W3, z0, z0+W3])
-
+        '''
+        
     def register_figure(self, fig):
         self._fig = fig
 
@@ -153,6 +161,7 @@ def obstacle_check(x, y, z, x_obst, y_obst, z_obst):
 def create_mission(world, mission_number = 1):
     if mission_number == 1:
         world.add_box(-2, -1, 0, 0.5, 0.5, 0.5)
+        world.add_box(-0.5, -0.5, 0.25, 1, 1, 0.3)
     else: 
         pass
     return world
