@@ -9,7 +9,7 @@ class MPC_controller:
         self.R = R # Weight matrix for control
         self.N = N # Horizon
 
-        self.x0 = x0 # Initial state
+        self.x0 = x0.astype(float) # Initial state
 
         # Define the state and control input dimensions
         self.nr_states = A.shape[0]
@@ -19,9 +19,9 @@ class MPC_controller:
         self.X = cp.Variable((self.nr_states, N + 1)) # State, each column is a new time
         self.U = cp.Variable((self.nr_controls, N)) # Control
 
-        self.state_constraints = np.array([[-2, 2],
-                                           [-1, 1],
-                                           [0, 2]]) # allowed states
+        self.state_constraints = np.array([[-10, 10],
+                                           [-10, 10],
+                                           [0, 10]]) # allowed states
         
         self.control_constraints = np.array([[-0.4, 0.4],
                                              [-0.4, 0.4],
@@ -53,9 +53,6 @@ class MPC_controller:
         if problem.status == "optimal":
             u = self.U.value[:, 0] # extracts first cloumn
 
-        # Apply the control input to the system
-        self.x0 += self.A @ self.x0 + self.B @ u
-
         return u
 
     def set_param(self, A, B, Q,  R, N):
@@ -75,3 +72,6 @@ class MPC_controller:
         # Create optimization variables
         self.X = cp.Variable((self.nr_states, self.N + 1)) # State
         self.U = cp.Variable((self.nr_controls, self.N)) # Control
+
+    def update_state(self, est_pos):
+        self.x0 = est_pos

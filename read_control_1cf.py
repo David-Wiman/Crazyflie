@@ -92,7 +92,7 @@ def run_sequence(scf, logger, sequence):
 
     # Set starting position
     position = sequence[sequencePos]
-    print('Setting position {}'.format(position))
+    print('Setting reference position {}'.format(position))
 
     for log_entry in logger: #Synchronous list (runs when a new position is recieved, otherwise blocks)
         timestamp = log_entry[0]
@@ -103,27 +103,33 @@ def run_sequence(scf, logger, sequence):
 
         # Determine position reference based on time
         relativeTime = time.time()-startTime
-        if relativeTime > (sequencePos+1)*0.1: # Fly to each point for 5 seconds
+        if relativeTime > (sequencePos+1)*0.1:# Fly to each point for 5 seconds
             sequencePos += 1
 
             if sequencePos >= len(sequence):
                 break
 
             position = sequence[sequencePos]
-            print('Setting position {}'.format(position))
+            print('Setting reference position {}'.format(position))
 
-        reference_trajectory = np.repeat(position[np.newaxis,...], 20, axis=0)
+        #reference_trajectory = np.repeat(position[np.newaxis,...], 200, axis=0)
 
-        vel = controller.compute_control(reference_trajectory)
+        vel = controller.compute_control(sequence[sequencePos:sequencePos+10])
 
-        x0_list.append(controller.x0)
+        #print(f"Controll signal: {vel}")
 
         cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
 
         # Log some data
-        logdata[uri]['x'].append(position[0])
-        logdata[uri]['y'].append(position[1])
-        logdata[uri]['z'].append(position[2])
+        logdata[uri]['x'].append(controller.x0[0])
+        logdata[uri]['y'].append(controller.x0[1])
+        logdata[uri]['z'].append(controller.x0[2])
+
+        est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
+
+        #print(f"Estimated position: {est_pos}")
+
+        controller.update_state(est_pos)
 
     print('Landing')
     for i in range(20):
@@ -134,31 +140,20 @@ def run_sequence(scf, logger, sequence):
     # since the message queue is not flushed before closing
     time.sleep(0.1)
 
-def plot_path(logdata):
+def plot_path(logdata, path):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     fig = plt.figure()
     fig.add_subplot(projection='3d')
     plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'], 'b')
+    plt.plot(*path.T, '--r')
+    plt.legend(["Real Position", "Planned Path"])
+    plt.show()
 
 
 if __name__ == '__main__':
     logdata = {}
     crazy_flie_nbr = 1
-
-    world = BoxWorld()
-    start_node = np.array([0,0,0])
-
-    start_node = np.array([0, 0, 0])
-    goal_node = np.array([10, 5, 2])
-    options = {
-            'N': 10000,
-            'terminate_tol': 0.1,
-            'npoints': 50,
-            'beta': 0.05,
-            'lambda': 0.3,
-            'r': np.sqrt(0.4),
-    }
 
     # URI to the Crazyflie to connect to
     uri = f'radio://0/80/2M/E7E7E7E70{crazy_flie_nbr}'
@@ -180,9 +175,9 @@ if __name__ == '__main__':
 
     path, sequence, parents, costs = rrt_star(start_node, goal_node, world, options)
 
-    A = np.array([[0.01, 0, 0],
-                  [0, 0.01, 0],
-                  [0, 0, 0.01]])
+    A = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1]])
 
     B = np.array([[1, 0, 0],
                   [0, 1, 0],
@@ -213,7 +208,4 @@ if __name__ == '__main__':
         with SyncLogger(scf, log_config) as logger:
             run_sequence(scf, logger, path)
 
-    plot_path(logdata)
-    plt.plot(*path.T, '--r')
-    plt.legend(["Real Position", "Planned Path"])
-    plt.show()
+    plot_path(logdata, path)
