@@ -162,6 +162,7 @@ def create_mission(world, mission_number = 1):
     if mission_number == 1:
         world.add_box(-2, -1, 0, 0.5, 0.5, 0.5)
         world.add_box(-0.5, -0.5, 0.25, 1, 1, 0.3)
+        world.add_box(-2, -1, 1.3, 3, 3, 0.1)
     else: 
         pass
     return world

@@ -37,6 +37,7 @@ def rrt_star(snode, gnode, world, options):
     parents = np.array([0])  # Specifies edges in network.
     costs = np.array([0])    # Specifies costs to get to node.
     gnode = gnode.reshape(3,1)
+    gnode_idx = -1
     
     for i in range(N):
         random_node = sample(world,gnode,options)  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
@@ -67,17 +68,21 @@ def rrt_star(snode, gnode, world, options):
                 
                 # IF collision free AND cost to get to neighborhood node is less via new node:
                 if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)) and costs[new_idx] + distance(neighbor_node, new_node) < costs[neighbor_idx]:
+                    costs[nearest_idx] = costs[new_idx] + distance(neighbor_node, new_node)
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
-    
+                    
             # Checking if new node is the goal node.
             if distance(new_node, gnode) < options.get('terminate_tol'):
-                break
-    
+                gnode_idx = new_idx
+                #break
+    if gnode_idx == -1:
+        print(f'Warning! Goal node not found!')
+
     # Backtrack to get nodes for optimal path.
-    path = backtrack(parents, nodes)
+    path = backtrack(parents, nodes, gnode_idx)
     
     # Return tree. 
-    return path.T, nodes.T, parents, costs
+    return path.T, nodes.T, parents, costs, gnode_idx
 
 
 def sample(world, gnode, options): 
@@ -130,7 +135,7 @@ def discrete_line(node1, node2, npoints = 50):
 def neighborhood(nodes, center, radius):
     """Find the indices of the states in nodes within a neighborhood with
         radius r from node center."""
-    idxs = np.where(np.sum((nodes - center) ** 2, axis=0) < radius**2)
+    idxs = np.where(np.sum((nodes - center) ** 2, axis=0) < radius**2) # Something very wrong here.
     return idxs[0] # NOTE double index?
 
 
@@ -139,9 +144,9 @@ def distance(node1, node2):
     return np.linalg.norm(node1 - node2)
 
 
-def backtrack(parents, nodes):
+def backtrack(parents, nodes, gnode_idx):
     '''Backtracks the path from goal node to start node.'''
-    idx = parents[-1]
+    idx = parents[gnode_idx]
     path = np.array(nodes[:, idx].reshape(3, 1))
     idx = parents[idx]
     while idx != 0:
@@ -151,7 +156,7 @@ def backtrack(parents, nodes):
     return path
 
 
-def plot_path(world, nodes, parents): # Needs modifications for 3D.
+def plot_path(world, nodes, parents, gnode_idx): # Needs modifications for 3D.
     '''Plots the tree and the planned path.'''
     
     fig = plt.figure()
@@ -175,7 +180,7 @@ def plot_path(world, nodes, parents): # Needs modifications for 3D.
     #
      
     drawlines = []
-    idx = -1 # idx_goal before.
+    idx = gnode_idx
     # Plot path.
     while idx != 0:
         drawlines = []
