@@ -4,7 +4,6 @@
 import numpy as np
 import rrt_star
 from world import BoxWorld, create_mission
-import matplotlib.pyplot as plt
 
 # Create world.
 world = BoxWorld([[-2, 2], [-1, 1], [0, 2]])
@@ -12,12 +11,13 @@ world = create_mission(world, 1)
 snode = np.array([0, 0, 0])
 gnode = np.array([0, 0, 1.7])
 options = {
-        'N': 20000,
+        'N': 5000,
         'terminate_tol': 0.1,
         'npoints': 50,
         'beta': 0.15,
         'lambda': 0.01,
         'r': np.sqrt(0.01),
+        'full_search' : False
 }
 
 # Run RRT*

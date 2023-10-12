@@ -2,7 +2,7 @@
 
 # Imports.
 import numpy as np
-from algorithms.world import BoxWorld
+from world import BoxWorld
 import matplotlib.pyplot as plt
 
 def rrt_star(snode, gnode, world, options):
@@ -46,13 +46,13 @@ def rrt_star(snode, gnode, world, options):
         new_node = steer(nearest_node, random_node, options) # Steer towards node and create new node. STEP LENGTH?
         
         if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)):
-            new_idx = len(parents) - 1
+            new_idx = len(parents)
             neighbor_idxs = neighborhood(nodes, new_node, options.get('r')) # Find neighborhood to new node. RADIUS OF NEIGHBORHOOD?
             min_cost = distance(nearest_node, new_node) + costs[nearest_idx] # Calculate cost to get to new node from nearest. 
             min_idx = nearest_idx
             
             # For all nodes in neighborhood (connect new to cheapest path).
-            for neighbor_idx in neighbor_idxs:  
+            for neighbor_idx in neighbor_idxs:
                 neighbor_node = nodes[:,neighbor_idx].reshape(3,1)
                 
                 if world.obstacle_free(discrete_line(neighbor_node, new_node, npoints)) and ( costs[neighbor_idx] + distance(neighbor_node, new_node) < min_cost ): # IF obstacle free AND cost to get to new node is less than before. 
@@ -73,11 +73,12 @@ def rrt_star(snode, gnode, world, options):
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
                     
             # Checking if new node is the goal node.
-            if distance(new_node, gnode) and not found < options.get('terminate_tol'):
+            if not found and distance(new_node, gnode) < options.get('terminate_tol'):
                 gnode_idx = new_idx
                 found = True
+                if ~options["full_search"]:
+                    break
                 
-                #break
     if gnode_idx == -1:
         print(f'Warning! Goal node not found!')
 
