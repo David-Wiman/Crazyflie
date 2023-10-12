@@ -17,7 +17,7 @@ class MPC_controller:
 
         # Create optimization variables
         self.X = cp.Variable((self.nr_states, N + 1)) # State, each column is a new time
-        self.U = cp.Variable((self.nr_controls, N)) # Control
+        self.U = cp.Variable((self.nr_controls, N + 1)) # Control
 
         self.state_constraints = np.array([[-10, 10],
                                            [-10, 10],
@@ -26,23 +26,27 @@ class MPC_controller:
         self.control_constraints = np.array([[-0.4, 0.4],
                                              [-0.4, 0.4],
                                              [-0.4, 0.4]]) # max and min u
+
+
+    def compute_control(self, reference_trajectory_N_long):
         # Compute constraints
         constraints = []
         for k in range(self.N):
             if k == 0:
-                constraints += [self.X[:, k] == x0]
-            constraints += [self.X[:, k + 1] == self.X[:, k] + self.A @ self.X[:, k] + self.B @ self.U[:, k]]
+                constraints += [self.X[:, k] == self.x0]
+
+            constraints += [self.X[:, k + 1] == (self.A @ self.X[:, k] + self.B @ self.U[:, k]), self.X[:, k + 1] == (self.A @ self.X[:, k] + self.B @ self.U[:, k])]
             constraints += [self.state_constraints[:, 0] <= self.X[:, k], self.X[:, k] <= self.state_constraints[:, 1]]
             constraints += [self.control_constraints[:, 0] <= self.U[:, k], self.U[:, k] <= self.control_constraints[:, 1]]
+        
         self.constraints = constraints
 
-    def compute_control(self, reference_trajectory_N_long):
         # Compute cost
         cost = 0.0
         for k in range(self.N):
             cost += cp.quad_form(self.X[:, k] - reference_trajectory_N_long[k, :], self.Q)
             cost += cp.quad_form(self.U[:, k], self.R)
-            
+                    
         # Create the optimization problem
         problem = cp.Problem(cp.Minimize(cost), self.constraints)
 
@@ -52,6 +56,8 @@ class MPC_controller:
         # Extraxt the first u
         if problem.status == "optimal":
             u = self.U.value[:, 0] # extracts first cloumn
+        else:
+            u = np.array([0, 0, 0])
 
         return u
 
@@ -65,9 +71,6 @@ class MPC_controller:
         # Define the state and control input dimensions
         self.nr_states = A.shape[0]
         self.nr_controls = B.shape[1]
-
-    def set_initial_state(self, x0):
-        self.x0 = x0
 
         # Create optimization variables
         self.X = cp.Variable((self.nr_states, self.N + 1)) # State
