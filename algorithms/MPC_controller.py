@@ -2,9 +2,9 @@ import numpy as np
 import cvxpy as cp
 
 class MPC_controller:
-    def __init__(self, A, B, Q,  R, N, x0):
+    def __init__(self, A, B, Q,  R, N, x0, sampling_time):
         self.A = A
-        self.B = B
+        self.B = B*sampling_time
         self.Q = Q # Weight matrix for state
         self.R = R # Weight matrix for control
         self.N = N # Horizon
@@ -19,9 +19,9 @@ class MPC_controller:
         self.X = cp.Variable((self.nr_states, N + 1)) # State, each column is a new time
         self.U = cp.Variable((self.nr_controls, N + 1)) # Control
 
-        self.state_constraints = np.array([[-10, 10],
-                                           [-10, 10],
-                                           [0, 10]]) # allowed states
+        self.state_constraints = np.array([[-2, 2],
+                                           [-2, 2],
+                                           [0, 2]]) # allowed states
         
         self.control_constraints = np.array([[-0.4, 0.4],
                                              [-0.4, 0.4],
@@ -31,11 +31,12 @@ class MPC_controller:
     def compute_control(self, reference_trajectory_N_long):
         # Compute constraints
         constraints = []
+        tolerance = np.array([1, 1, 1])*0.01
         for k in range(self.N):
             if k == 0:
                 constraints += [self.X[:, k] == self.x0]
 
-            constraints += [self.X[:, k + 1] == (self.A @ self.X[:, k] + self.B @ self.U[:, k]), self.X[:, k + 1] == (self.A @ self.X[:, k] + self.B @ self.U[:, k])]
+            constraints += [self.X[:, k + 1] - (self.A @ self.X[:, k] + self.B @ self.U[:, k]) <= tolerance, -tolerance <= self.X[:, k + 1] - (self.A @ self.X[:, k] + self.B @ self.U[:, k])]
             constraints += [self.state_constraints[:, 0] <= self.X[:, k], self.X[:, k] <= self.state_constraints[:, 1]]
             constraints += [self.control_constraints[:, 0] <= self.U[:, k], self.U[:, k] <= self.control_constraints[:, 1]]
         
