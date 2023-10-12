@@ -178,22 +178,16 @@ if __name__ == '__main__':
 
     path, sequence, parents, costs, goal_node_index = rrt_star(start_node, goal_node, world, options)
 
-    new_path = np.array([])
-    for i in range(path.shape[0] - 1):
-        new_path = np.append(new_path, np.linspace(path[i], path[i + 1], 10, axis = 1).squeeze())
-
-    new_path = np.array(new_path).reshape(-1, 3)
-
-    A = np.array([[0, 0, 0],
-                  [0, 0, 0],
-                  [0, 0, 0]])
+    A = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1]])
 
     B = np.array([[1, 0, 0],
                   [0, 1, 0],
                   [0, 0, 1]])
 
     # Define the cost function (quadratic cost with reference tracking)
-    Q = np.diag([100, 100, 100])  # State cost matrix
+    Q = np.diag([1000, 1000, 1000])  # State cost matrix
     R = np.diag([0.1, 0.1, 0.1])     # Control cost matrix
 
     N = 10
@@ -215,6 +209,6 @@ if __name__ == '__main__':
         reset_estimator(scf)
 
         with SyncLogger(scf, log_config) as logger:
-            run_sequence(scf, logger, new_path)
+            run_sequence(scf, logger, path)
 
-    plot_path(logdata, new_path)
+    plot_path(logdata, path)
