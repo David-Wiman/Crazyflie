@@ -38,6 +38,7 @@ def rrt_star(snode, gnode, world, options):
     costs = np.array([0])    # Specifies costs to get to node.
     gnode = gnode.reshape(3,1)
     gnode_idx = -1
+    found = False
     
     for i in range(N):
         random_node = sample(world,gnode,options)  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
@@ -72,8 +73,10 @@ def rrt_star(snode, gnode, world, options):
                     parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
                     
             # Checking if new node is the goal node.
-            if distance(new_node, gnode) < options.get('terminate_tol'):
+            if distance(new_node, gnode) and not found < options.get('terminate_tol'):
                 gnode_idx = new_idx
+                found = True
+                
                 #break
     if gnode_idx == -1:
         print(f'Warning! Goal node not found!')
