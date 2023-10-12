@@ -11,13 +11,13 @@ world = create_mission(world, 1)
 snode = np.array([0, 0, 0])
 gnode = np.array([0, 0, 1.7])
 options = {
-        'N': 5000,
+        'N': 10000,
         'terminate_tol': 0.1,
         'npoints': 50,
         'beta': 0.15,
         'lambda': 0.01,
         'r': np.sqrt(0.01),
-        'full_search' : False
+        'full_search' : False,
 }
 
 # Run RRT*
