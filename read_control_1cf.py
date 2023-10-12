@@ -103,7 +103,7 @@ def run_sequence(scf, logger, sequence):
 
         # Determine position reference based on time
         relativeTime = time.time()-startTime
-        if relativeTime > (sequencePos+1)*0.1:# Fly to each point for 5 seconds
+        if relativeTime > (sequencePos+1)*5:# Fly to each point for 5 seconds
             sequencePos += 1
 
             if sequencePos >= len(sequence):
@@ -112,24 +112,27 @@ def run_sequence(scf, logger, sequence):
             position = sequence[sequencePos]
             print('Setting reference position {}'.format(position))
 
-        #reference_trajectory = np.repeat(position[np.newaxis,...], 200, axis=0)
+        reference_trajectory = sequence
+        
+        # At the end of the sequence, add multiples of the last element
+        if (sequencePos + controller.N >= sequence.shape[0]):
+            added_points = np.repeat([sequence[-1]], controller.N, axis=0)
 
-        vel = controller.compute_control(sequence[sequencePos:sequencePos+10])
+            reference_trajectory = np.vstack([sequence, added_points])
 
-        #print(f"Controll signal: {vel}")
+        vel = controller.compute_control(reference_trajectory[sequencePos:sequencePos + controller.N])
 
         cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
+
+        est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
+
+        controller.update_state(est_pos)
 
         # Log some data
         logdata[uri]['x'].append(controller.x0[0])
         logdata[uri]['y'].append(controller.x0[1])
         logdata[uri]['z'].append(controller.x0[2])
-
-        est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
-
-        #print(f"Estimated position: {est_pos}")
-
-        controller.update_state(est_pos)
+        
 
     print('Landing')
     for i in range(20):
@@ -163,28 +166,34 @@ if __name__ == '__main__':
     world = BoxWorld()
 
     start_node = np.array([0, 0, 0])
-    goal_node = np.array([10, 10, 5])
+    goal_node = np.array([10, 0, 5])
     options = {
-        'N': 10000,
+        'N': 5000,
         'terminate_tol': 0.1,
         'npoints': 50,
         'beta': 0.05,
         'lambda': 0.3,
-        'r': np.sqrt(0.4),
+        'r': np.sqrt(0.3),
     }
 
-    path, sequence, parents, costs = rrt_star(start_node, goal_node, world, options)
+    path, sequence, parents, costs, goal_node_index = rrt_star(start_node, goal_node, world, options)
 
-    A = np.array([[1, 0, 0],
-                  [0, 1, 0],
-                  [0, 0, 1]])
+    new_path = np.array([])
+    for i in range(path.shape[0] - 1):
+        new_path = np.append(new_path, np.linspace(path[i], path[i + 1], 10, axis = 1).squeeze())
+
+    new_path = np.array(new_path).reshape(-1, 3)
+
+    A = np.array([[0, 0, 0],
+                  [0, 0, 0],
+                  [0, 0, 0]])
 
     B = np.array([[1, 0, 0],
                   [0, 1, 0],
                   [0, 0, 1]])
 
     # Define the cost function (quadratic cost with reference tracking)
-    Q = np.diag([100.0, 10.0, 2])  # State cost matrix
+    Q = np.diag([100, 100, 100])  # State cost matrix
     R = np.diag([0.1, 0.1, 0.1])     # Control cost matrix
 
     N = 10
@@ -206,6 +215,6 @@ if __name__ == '__main__':
         reset_estimator(scf)
 
         with SyncLogger(scf, log_config) as logger:
-            run_sequence(scf, logger, path)
+            run_sequence(scf, logger, new_path)
 
-    plot_path(logdata, path)
+    plot_path(logdata, new_path)

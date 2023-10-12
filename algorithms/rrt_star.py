@@ -2,7 +2,7 @@
 
 # Imports.
 import numpy as np
-from world import BoxWorld
+from algorithms.world import BoxWorld
 import matplotlib.pyplot as plt
 
 def rrt_star(snode, gnode, world, options):
