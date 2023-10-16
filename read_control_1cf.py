@@ -17,7 +17,7 @@ from algorithms.rrt_star import rrt_star
 from algorithms.MPC_controller import MPC_controller
 from mpl_toolkits.mplot3d import Axes3D
 
-simulate = True
+simulate = False
 
 if simulate:
     import cfsim.crtp as crtp
@@ -123,7 +123,7 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
         
 
     print('Landing')
-    for i in range(20):
+    for i in range(150):
         cf.commander.send_velocity_world_setpoint(0, 0, -0.1, 0)
         time.sleep(0.1)
     cf.commander.send_stop_setpoint()
@@ -183,17 +183,17 @@ def plot_tree(world, nodes, parents, gnode_idx): # Needs modifications for 3D.
 
 if __name__ == '__main__':
     logdata = {}
-    crazy_flie_nbr = 1
+    crazy_flie_nbr = 3
 
     # URI to the Crazyflie to connect to
-    uri = f'radio://0/80/2M/E7E7E7E70{crazy_flie_nbr}'
+    uri = f'radio://0/90/2M/E7E7E7E70{crazy_flie_nbr}'
 
     logdata[uri] = {'x':[],'y':[],'z':[]}
 
     world = BoxWorld([[-2, 2], [-1, 1], [0, 2]])
     world = create_mission(world, 1)
     start_node = np.array([0, 0, 0])
-    goal_node = np.array([0, 0, 1.7])
+    goal_node = np.array([0, 0, 1.2])
     options = {
             'N': 10000,
             'terminate_tol': 0.01,
@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     path, nodes, parents, costs, goal_node_index = rrt_star(start_node, goal_node, world, options)
     
-    controller = PID_controller(2, 0.1, 0.1)
+    controller = PID_controller(1.2, 0, 0.2)
 
     crtp.init_drivers(enable_debug_driver=False)
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         reset_estimator(scf)
 
         with SyncLogger(scf, log_config) as logger:
-            run_sequence(scf, logger, path, goal_node, options["terminate_tol"], 1)
+            run_sequence(scf, logger, path, goal_node, options["terminate_tol"], 0.3)
 
     plot_tree(world, nodes, parents, goal_node_index)
     plot_path(logdata, path, world)
