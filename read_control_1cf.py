@@ -141,6 +141,7 @@ def plot_path(logdata, path, world):
     #plt.zlim([world.zmin, world.zmax])
     plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'], 'b')
     plt.plot(*path.T, '--r')
+    world.draw()
     plt.legend(["Real Position", "Planned Path"])
     plt.show()
 
@@ -165,7 +166,6 @@ def plot_tree(world, nodes, parents, gnode_idx): # Needs modifications for 3D.
             drawlines.append(ll[2])
             ax.plot3D(*drawlines, color='r', lw = 1)
     #plt.plot(*drawlines, color='k', lw=1)
-    #
      
     drawlines = []
     idx = gnode_idx
@@ -178,8 +178,6 @@ def plot_tree(world, nodes, parents, gnode_idx): # Needs modifications for 3D.
         drawlines.append(ll[2])
         idx = parents[idx]
         ax.plot3D(*drawlines, color='b', lw = 2)
-    #plt.plot(*drawlines, color='b', lw=2)
-    #ax.plot3D(*drawlines, color='b', lw = 2)
     plt.show()
 
 
