@@ -144,6 +144,44 @@ def plot_path(logdata, path, world):
     plt.legend(["Real Position", "Planned Path"])
     plt.show()
 
+def plot_tree(world, nodes, parents, gnode_idx): # Needs modifications for 3D.
+    '''Plots the tree and the planned path.'''
+    
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.set_xlim([world.xmin, world.xmax])
+    ax.set_ylim([world.ymin, world.ymax])
+    ax.set_zlim([world.zmin, world.zmax])
+    world.draw() # TODO world plot needs fixing.
+    
+    # Plot tree
+    drawlines = []
+    for node in parents:
+        if node != 0:
+            drawlines = []
+            ll = np.column_stack((nodes[parents[node]], nodes[node]))
+            drawlines.append(ll[0])
+            drawlines.append(ll[1])
+            drawlines.append(ll[2])
+            ax.plot3D(*drawlines, color='r', lw = 1)
+    #plt.plot(*drawlines, color='k', lw=1)
+    #
+     
+    drawlines = []
+    idx = gnode_idx
+    # Plot path.
+    while idx != 0:
+        drawlines = []
+        ll = np.column_stack((nodes[parents[idx]], nodes[idx]))
+        drawlines.append(ll[0])
+        drawlines.append(ll[1])
+        drawlines.append(ll[2])
+        idx = parents[idx]
+        ax.plot3D(*drawlines, color='b', lw = 2)
+    #plt.plot(*drawlines, color='b', lw=2)
+    #ax.plot3D(*drawlines, color='b', lw = 2)
+    plt.show()
+
 
 if __name__ == '__main__':
     logdata = {}
@@ -186,4 +224,6 @@ if __name__ == '__main__':
 
         with SyncLogger(scf, log_config) as logger:
             run_sequence(scf, logger, path, goal_node, options["terminate_tol"], 1)
+
+    plot_tree(world, nodes, parents, goal_node_index)
     plot_path(logdata, path, world)
