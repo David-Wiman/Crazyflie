@@ -30,7 +30,7 @@ class PID_controller:
         self.prev_error = d
 
         # Cap off
-        v = min(self.vmax,v)
-        vel = v*pos_error/d
+        v = min(self.vmax, v)
+        vel = -v*pos_error/d
 
         return vel
