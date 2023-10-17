@@ -68,6 +68,9 @@ def wait_for_position_estimator(scf):
                     max_y - min_y) < threshold and (
                     max_z - min_z) < threshold:
                 break
+    
+    print('Position found')
+    print('Starting mission...')
 
 
 def set_initial_position(scf):
@@ -93,26 +96,20 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
 
     # Set starting position
     position = sequence[sequencePos]
-    print('Setting reference position {}'.format(position))
 
     for log_entry in logger: #Synchronous list (runs when a new position is recieved, otherwise blocks)
-        timestamp = log_entry[0]
         data = log_entry[1]
-        logconf_name = log_entry[2]
-
-        #print('[%d][%s]: %s' % (timestamp, logconf_name, data))
 
         # Determine position reference based on time
         relativeTime = time.time()-startTime
         if relativeTime > (previous_time+sampling_time):# Fly to each point for 5 seconds
-            sequencePos = np.argmin(np.sum((sequence - controller.x0) ** 2, axis=1))+1
+            sequencePos = np.argmin(np.sum((sequence - controller.state) ** 2, axis=1))+1
             previous_time = relativeTime
 
             if sequencePos >= len(sequence):
                 break
 
             position = sequence[sequencePos]
-            print('Setting reference position {}'.format(position))
 
         reference_trajectory = sequence
         
@@ -127,17 +124,17 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
         cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
 
         est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
-        print(f"Estimated position: {est_pos}, dist: {np.linalg.norm(est_pos - goal_node)}")
+
         if np.linalg.norm(est_pos - goal_node) < tolerance or relativeTime > 60:
             break
 
         controller.update_state(est_pos)
 
         # Log some data
-        logdata[uri]['x'].append(controller.x0[0])
-        logdata[uri]['y'].append(controller.x0[1])
-        logdata[uri]['z'].append(controller.x0[2])
-        
+        logdata[uri]['x'].append(est_pos[0])
+        logdata[uri]['y'].append(est_pos[1])
+        logdata[uri]['z'].append(est_pos[2])
+
 
     print('Landing')
     for i in range(20):
@@ -201,7 +198,7 @@ if __name__ == '__main__':
     R = np.diag([0.1, 0.1, 0.1])     # Control cost matrix
 
     N = 5
-    sampling_time=0.1
+    sampling_time = 0.3
 
     controller = MPC_controller(A, B, Q, R, N, start_node, sampling_time)
 
