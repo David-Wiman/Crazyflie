@@ -216,10 +216,10 @@ start = np.array([[1.0], [1.0], [1.0]])
 # print(start.shape)
 goal = np.array([9.0, 9.0, 9.0])
 # Define other parameters, such as world and opts
-opts = {'beta': 0.1, 'lambda': 0.1, 'eps': 1, 'K': 1000, 'npoints': 50, 'r':np.sqrt(0.1)}  # Reduced K for demonstration
+opts = {'beta': 0.1, 'lambda': 0.1, 'eps': 1, 'K': 1000, 'npoints': 50, 'r':np.sqrt(0.1)} 
 ax.scatter(start[0], start[1], start[2], c='b', marker='o')
 ax.scatter(goal[0], goal[1], goal[2], c='g', marker='*')
 # # Plot the RRT tree dynamically in 3D
 ani, nodes, parents, gnode_idx = plot_rrt_particle_tree_dynamic_3d(start, goal, world, opts,fig, ax)
-ani.save('C:/Users/Simon/OneDrive/Desktop/SkolSaker/TSFS12/tsfs12-crazyflie/algorithms/animation.gif', writer='pillow',savefig_kwargs={'transparent': True, 'bbox_inches': 'tight'})
+ani.save('/animation.gif', writer='pillow',savefig_kwargs={'transparent': True, 'bbox_inches': 'tight'})
 plt.show()
