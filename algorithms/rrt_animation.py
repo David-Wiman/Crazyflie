@@ -1,11 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from misc import Timer
 from world3D import BoxWorld3D
 import numpy as np
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib.animation import FuncAnimation
 # File for RRT* algorithm.
 
@@ -13,8 +12,9 @@ from matplotlib.animation import FuncAnimation
 import numpy as np
 import world
 import matplotlib.pyplot as plt
+from rrt_star import *
 
-def rrt_star( gnode, world, options, nodes, parents, costs):
+def rrt_star_step( gnode, world, options, nodes, parents, costs):
     '''
     Main algorithm for motion planning using RRT*. 
     The algorithm account for static obstacles in the environment.
@@ -40,7 +40,7 @@ def rrt_star( gnode, world, options, nodes, parents, costs):
     '''
     npoints = options.get('npoints')    # Specifies all node positions in network.
 
-    
+    gnode_idx = None
 
     random_node = sample(world,gnode,options)  # WORLD MEASUREMENTS? ONLY IN FREE SPACE?
     # print(f"nodes: {nodes.shape}")
@@ -79,12 +79,13 @@ def rrt_star( gnode, world, options, nodes, parents, costs):
             if world.obstacle_free(discrete_line(nearest_node, new_node, npoints)) and costs[new_idx] + distance(neighbor_node, new_node) < costs[neighbor_idx]:
                 parents[neighbor_idx] = new_idx # Set parent for neighborhood node to new node. Remove previous existing edge. Add new edge.
 
-        # Checking if new node is the goal node.
-        # if distance(new_node, gnode) < options.get('terminate_tol'):
-        #     done = True
+        if distance(new_node, gnode) < options.get('eps'):
+            gnode_idx = new_idx
+            done = True
     
     # Return tree. 
-    return nodes, parents, costs
+    print(nodes.shape)
+    return nodes, parents, costs, gnode_idx
 
 
 def sample(world, gnode, options): 
@@ -111,9 +112,9 @@ def sample(world, gnode, options):
 def nearest(nodes, random_node):
     """Find index of state nearest to x in the matrix nodes"""
     #nearest_idx = np.argmin(np.sum((nodes - random_node[:, None]) ** 2, axis=0)) 
-    print(f"nodes: {nodes.shape}")
-    print(f"random_node: {random_node.shape}")
-    print(f"size of subtraction: {np.subtract(nodes,random_node).shape}")
+    # print(f"nodes: {nodes.shape}")
+    # print(f"random_node: {random_node.shape}")
+    # print(f"size of subtraction: {np.subtract(nodes,random_node).shape}")
     nearest_idx = np.argmin(np.sum(np.subtract(nodes,random_node) ** 2, axis=0)) # TODO test this.
     nearest_node = nodes[:,nearest_idx].reshape(3, 1)
     return nearest_node, nearest_idx
@@ -142,7 +143,7 @@ def neighborhood(nodes, center, radius):
     """Find the indices of the states in nodes within a neighborhood with
         radius r from node center."""
     idxs = np.where(np.sum((nodes - center) ** 2, axis=0) < radius**2)
-    return idxs[0] # NOTE double index?
+    return idxs[0] 
 
 
 def distance(node1, node2):
@@ -163,12 +164,10 @@ def backtrack(parents, nodes):
     return n_path_nodes, length
 
 
-def plot_rrt_particle_tree_dynamic_3d(start, goal, world, opts):
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    world.draw(ax=ax)
+def plot_rrt_particle_tree_dynamic_3d(start, goal, world, opts, fig,ax):
 
-    
+    world.draw(ax=ax)
+    final_gnode_idx = None
     nodes = np.array([start]).T
     # print(f"nodes.shape: {nodes.shape}")
     lines = []
@@ -180,33 +179,34 @@ def plot_rrt_particle_tree_dynamic_3d(start, goal, world, opts):
     def update(frame):
         #print("test update")
         nonlocal nodes, parents, lines, costs
-
         # Perform one step of RRT expansion
-        nodes, parents, costs = rrt_star(goal, world, opts, nodes, parents, costs)
+        nodes, parents, costs, gnode_idx = rrt_star_step(goal, world, opts, nodes, parents, costs)
         # Draw the new lines created in the RRT expansion
         new_lines = []
         for i in range(len(lines), len(nodes[0])):
             parent_idx = parents[i]
             parent_state = nodes[:, parent_idx]
             current_state = nodes[:, i]
-
             line = ax.plot([parent_state[0], current_state[0]],
                            [parent_state[1], current_state[1]],
                            [parent_state[2], current_state[2]], 'b-', lw=1, alpha=0.5)
             new_lines.extend(line)
-
+        
+        if gnode_idx != None:
+            final_gnode_idx = gnode_idx
         lines.extend(new_lines)  # Add the new lines to the list of all lines
 
     ani = FuncAnimation(fig, update, frames=opts['K'], repeat=False)
-    return ani
+    return ani, nodes, parents, final_gnode_idx
 
 
 
 
-
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
 
 world = BoxWorld3D([[0, 10], [0, 10], [0, 10]])
-world.add_box(1, 2, 3, 5, 2, 2)  # Define the 3D box with dimensions (width, height, depth)
+# world.add_box(3, 3, 3, 1, 1, 1)  # Define the 3D box with dimensions (width, height, depth)
 world.add_box(0, 6, 6, 1, 2, 2)  # Define the 3D box with dimensions (width, height, depth)
 world.add_box(6, 1, 5, 4, 2, 2)  # Define the 3D box with dimensions (width, height, depth)
 world.add_box(7, 6, 3, 3, 2, 2)  # Define the 3D box with dimensions (width, height, depth)
@@ -216,8 +216,10 @@ start = np.array([[1.0], [1.0], [1.0]])
 # print(start.shape)
 goal = np.array([9.0, 9.0, 9.0])
 # Define other parameters, such as world and opts
-opts = {'beta': 0.1, 'lambda': 1, 'eps': 0.001, 'K': 500, 'npoints': 10, 'r':2}  # Reduced K for demonstration
-
-# Plot the RRT tree dynamically in 3D
-ani = plot_rrt_particle_tree_dynamic_3d(start, goal, world, opts)
+opts = {'beta': 0.1, 'lambda': 0.1, 'eps': 1, 'K': 1000, 'npoints': 50, 'r':np.sqrt(0.1)}  # Reduced K for demonstration
+ax.scatter(start[0], start[1], start[2], c='b', marker='o')
+ax.scatter(goal[0], goal[1], goal[2], c='g', marker='*')
+# # Plot the RRT tree dynamically in 3D
+ani, nodes, parents, gnode_idx = plot_rrt_particle_tree_dynamic_3d(start, goal, world, opts,fig, ax)
+ani.save('C:/Users/Simon/OneDrive/Desktop/SkolSaker/TSFS12/tsfs12-crazyflie/algorithms/animation.gif', writer='pillow',savefig_kwargs={'transparent': True, 'bbox_inches': 'tight'})
 plt.show()
