@@ -17,7 +17,7 @@ from algorithms.rrt_star import rrt_star
 from algorithms.MPC_controller import MPC_controller
 from mpl_toolkits.mplot3d import Axes3D
 
-simulate = True
+simulate = False
 
 if simulate:
     import cfsim.crtp as crtp
@@ -136,7 +136,7 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
 
 
     print('Landing')
-    for i in range(20):
+    for i in range(180):
         cf.commander.send_velocity_world_setpoint(0, 0, -0.1, 0)
         time.sleep(0.1)
     cf.commander.send_stop_setpoint()
@@ -161,10 +161,10 @@ def plot_path(logdata, path, world):
 
 if __name__ == '__main__':
     logdata = {}
-    crazy_flie_nbr = 1
+    crazy_flie_nbr = 3
 
     # URI to the Crazyflie to connect to
-    uri = f'radio://0/80/2M/E7E7E7E70{crazy_flie_nbr}'
+    uri = f'radio://0/90/2M/E7E7E7E70{crazy_flie_nbr}'
 
     logdata[uri] = {'x':[],'y':[],'z':[]}
 
