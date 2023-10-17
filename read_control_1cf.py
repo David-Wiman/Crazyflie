@@ -94,40 +94,39 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
     sequencePos = 0
     previous_time = 0
 
-    # Set starting position
-    position = sequence[sequencePos]
-
     for log_entry in logger: #Synchronous list (runs when a new position is recieved, otherwise blocks)
         data = log_entry[1]
 
         # Determine position reference based on time
-        relativeTime = time.time()-startTime
-        if relativeTime > (previous_time+sampling_time):# Fly to each point for 5 seconds
-            sequencePos = np.argmin(np.sum((sequence - controller.state) ** 2, axis=1))+1
+        relativeTime = time.time() - startTime
+        if relativeTime > (previous_time + sampling_time):# Fly to each point for 5 seconds
+            sequencePos = np.argmin(np.sum((sequence - controller.state) ** 2, axis = 1)) + 1
             previous_time = relativeTime
 
             if sequencePos >= len(sequence):
                 break
 
-            position = sequence[sequencePos]
-
         reference_trajectory = sequence
         
         # At the end of the sequence, add multiples of the last element
         if (sequencePos + controller.N >= sequence.shape[0]):
-            added_points = np.repeat([sequence[-1]], controller.N, axis=0)
-
+            added_points = np.repeat([sequence[-1]], controller.N, axis = 0)
             reference_trajectory = np.vstack([sequence, added_points])
 
+        # Compute control signal using MPC
         vel = controller.compute_control(reference_trajectory[sequencePos:sequencePos + controller.N])
 
+        # Send desiered velocities to CrazyFlie
         cf.commander.send_velocity_world_setpoint(vel[0], vel[1], vel[2], 0)
 
+        # Retrive Kalman estimates of positionSS
         est_pos = np.array([data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
 
+        # If CraztFlie at target or timeout, stop
         if np.linalg.norm(est_pos - goal_node) < tolerance or relativeTime > 60:
             break
-
+        
+        # Update controller position
         controller.update_state(est_pos)
 
         # Log some data

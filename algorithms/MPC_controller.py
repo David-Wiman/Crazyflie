@@ -1,5 +1,3 @@
-""" David Wiman, 17/10 2023, as part of TSFS12 at LiU """
-
 # Imports
 import numpy as np
 import cvxpy as cp
