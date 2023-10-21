@@ -12,85 +12,16 @@ B = np.array([[1, 0, 0],
               [0, 0, 1]])
 
 # Define the cost function (quadratic cost with reference tracking)
-Q = np.diag([10000, 10000, 10000])  # State cost matrix
+Q = np.diag([1000, 1000, 1000])  # State cost matrix
 R = np.diag([0.1, 0.1, 0.1])     # Control cost matrix
 
-N = 10
+N = 5
+intitial_state = np.array([1.5, -0.5, 0.5]
+sampling_time = 0.5
 
-controller = MPC_controller(A, B, Q, R, N, x0=np.array([1.5, -0.5, 0.5]))
+controller = MPC_controller(A, B, Q, R, N, intitial_state, sampling_time)
 
 ref_index = 0
-sequence = np.array([[1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [1.5, -0.5, 0.5],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5],
-                    [1.6, -0.5, 0.5]])
-
-
 sequence = np.array([
     [-5.69767701e-02,  1.00512585e-03,  4.86117567e-02],
     [-9.51935405e-02,  4.63777938e-03,  7.50264374e-02],
@@ -150,26 +81,20 @@ sequence = np.array([
     [-9.68042581e-02, -3.08596470e-02,  1.66792147e+00],
     [-8.77187265e-02, -2.79633250e-02,  1.67093219e+00]])
 
-position = sequence[ref_index]
-
 error = []
-
-for _ in range(100):
+for _ in range(100): # 100 loop test
+    # Update index in the reference sequence
     ref_index += 1
 
+    # Stop at the end of the sequence
     if ref_index >= len(sequence):
         break
 
-    position = sequence[ref_index]
-
-    reference_trajectory = sequence
-
     # At the end of the sequence, add multiples of the last element
+    reference_trajectory = sequence
     if (ref_index + controller.N >= sequence.shape[0]):
         added_points = np.repeat([sequence[-1]], controller.N, axis=0)
-
         reference_trajectory = np.vstack([sequence, added_points])
-
 
     u = controller.compute_control(reference_trajectory[ref_index:ref_index + controller.N])
 
