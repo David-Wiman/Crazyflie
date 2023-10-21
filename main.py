@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-#
 """
 Simple example that connects to one crazyflie, sets the initial position
 flies towards specified positions in sequence using onboard velocity control.
-Using synchronous crazyflie classes suitable to control a single drone.
-Works best with lighthouse/loco positioning systems.
+
+Works best with lighthouse/loco positioning systems for real runs
 """
 import time
 import numpy as np
@@ -99,7 +97,7 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
 
         # Determine position reference based on time
         relativeTime = time.time() - startTime
-        if relativeTime > (previous_time + sampling_time):# Fly to each point for 5 seconds
+        if relativeTime > (previous_time + sampling_time):
             sequencePos = np.argmin(np.sum((sequence - controller.state) ** 2, axis = 1)) + 1
             previous_time = relativeTime
 
@@ -136,9 +134,10 @@ def run_sequence(scf, logger, sequence, goal_node, tolerance, sampling_time):
 
 
     print('Landing')
-    for i in range(180):
+    for i in range(180): # base this number on Crazyflie altitude at the end of the flight
         cf.commander.send_velocity_world_setpoint(0, 0, -0.1, 0)
         time.sleep(0.1)
+        
     cf.commander.send_stop_setpoint()
     # Make sure that the last packet leaves before the link is closed
     # since the message queue is not flushed before closing
@@ -151,23 +150,26 @@ def plot_path(logdata, path, world):
     fig.add_subplot(projection='3d')
     plt.xlim([world.xmin, world.xmax])
     plt.ylim([world.ymin, world.ymax])
-    #plt.zlim([world.zmin, world.zmax])
+
+    # Plot the actual path the Crazyflie took
     plt.plot(logdata[uri]['x'], logdata[uri]['y'], logdata[uri]['z'], 'b')
+    # Plot reference trajectory
     plt.plot(*path.T, '--r')
     plt.legend(["Real Position", "Planned Path"])
+    # Plot the world obstacles
     world.draw()
     plt.show()
 
-
 if __name__ == '__main__':
     logdata = {}
-    crazy_flie_nbr = 3
+    crazy_flie_nbr = 3 # Change depending on your address
 
     # URI to the Crazyflie to connect to
     uri = f'radio://0/90/2M/E7E7E7E70{crazy_flie_nbr}'
 
     logdata[uri] = {'x':[],'y':[],'z':[]}
 
+    # Create world, mission and options for the path planner
     world = BoxWorld([[-2, 2], [-1, 1], [0, 2]])
     world = create_mission(world, 1)
     start_node = np.array([0, 0, 0])
@@ -182,8 +184,10 @@ if __name__ == '__main__':
             'full_search' : False,
     }
 
+    # Plan the optimal path from the start node to the goal node, returned in 'path'
     path, nodes, parents, costs, goal_node_index = rrt_star(start_node, goal_node, world, options)
-    
+
+    # Set matrixes for the MPC controller
     A = np.array([[1, 0, 0],
                   [0, 1, 0],
                   [0, 0, 1]])
@@ -196,9 +200,11 @@ if __name__ == '__main__':
     Q = np.diag([100, 100, 100])  # State cost matrix
     R = np.diag([0.1, 0.1, 0.1])     # Control cost matrix
 
+    # Set the prediction horizon and sampling time
     N = 5
     sampling_time = 0.3
 
+    # Create the controller object
     controller = MPC_controller(A, B, Q, R, N, start_node, sampling_time)
 
     crtp.init_drivers(enable_debug_driver=False)
@@ -214,5 +220,8 @@ if __name__ == '__main__':
         reset_estimator(scf)
 
         with SyncLogger(scf, log_config) as logger:
+            # The actual run/simulation starts here
             run_sequence(scf, logger, path, goal_node, options["terminate_tol"], sampling_time)
+
+    # Plot the results
     plot_path(logdata, path, world)
